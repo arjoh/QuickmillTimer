@@ -1,10 +1,14 @@
 #include <Arduino.h>
 #include <ezButton.h>
+#include <internalLED.h>
 
-int LED = 4; // LED_BUILTIN;
+const int LED = /*4; */ LED_BUILTIN;
+const int LED_ON = LED == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
+const int LED_OFF = LED == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
+
 bool running = false;
 
-ezButton button(5);
+ezButton button(D1);
 u_char seconds = 5;
 u_long started = 0;
 u_long elapsed = 0;
@@ -22,6 +26,7 @@ void setup()
 {
   Serial.begin(9600);
   pinMode(LED, OUTPUT);
+  digitalWrite(LED, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
   display(seconds * 1000, 0);
 }
@@ -32,7 +37,7 @@ void loop()
   updateDisplay(elapsed, DISPLAY_EVERY);
 
   elapsed = millis() - started;
-  if (running && elapsed > seconds * 1000)
+  if (running && elapsed >= seconds * 1000)
   {
     setRunning(false);
     return;
@@ -73,8 +78,12 @@ void display(float value, u_char decimals)
 void setRunning(bool to)
 {
   running = to;
-  digitalWrite(LED, running);
+  digitalWrite(LED, running ? LED_ON : LED_OFF);
   Serial.printf("running: %s\n", running ? "true" : "false");
+  if (!running)
+  {
+    Serial.printf("elasped: %lu\n", elapsed);
+  }
   started = running * millis();
   elapsed = 0;
 
