@@ -44,7 +44,7 @@ void Display::setup(const uint8_t latchPin, const uint8_t clockPin, const uint8_
 
     lastRefresh = millis();
     nextDigit = 0;
-    refreshEvery = 16;
+    refreshEvery = 5;
 }
 
 void Display::set(const ledDigit numbers[], const ledDigit decimalOn = std::nullopt)

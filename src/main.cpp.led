@@ -1,0 +1,101 @@
+#include "Arduino.h"
+#include "Timer.h"
+Timer timer;
+
+u_long elapsed = 0;
+u_long started = 0;
+u_char seconds = 25;
+int display = 0;
+
+int num1 = 0;
+int num2 = 0;
+int num3 = 0;
+int display_timer = 0;
+
+// https://lastminuteengineers.com/74hc595-shift-register-arduino-tutorial/
+int latchPin = 15; // STCP -> RCLK
+int clockPin = 14; // SHCP -> SRCLK
+int dataPin = 13;  // DS
+int anodePins[] = {D1, D2, D3};
+
+int count = 0;
+int numbers[3];
+bool decimalPoints[3];
+
+const byte digits[10]{B00000011, B10011111, B00100101, B00001101, B10011001, B01001001, B01000001, B00011111, B00000001, B00001001};
+
+
+const byte dpOn = B11111110;
+const byte dpOff = B11111111;
+
+void screenOff();
+void separate(long);
+void Display();
+
+void setup()
+{
+  Serial.begin(115200);
+  pinMode(D3, OUTPUT);
+  pinMode(D2, OUTPUT);
+  pinMode(D1, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+  pinMode(latchPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);
+
+  screenOff();
+
+  display_timer = timer.every(5, Display);
+}
+
+void loop()
+{
+  timer.update();
+
+  if (started == 0 || elapsed > seconds * 1000)
+  {
+    started = millis();
+    elapsed = 0;
+  }
+  else
+  {
+    elapsed = millis() - started;
+  }
+
+  display = elapsed / 100;
+  separate(display);
+}
+
+void separate(long num)
+{
+  num1 = num / 100;
+  numbers[0] = num1;
+  int num1_remove = num - (num1 * 100);
+  num2 = num1_remove / 10;
+  numbers[1] = num2;
+  int num2_remove = num1_remove - (num2 * 10);
+  num3 = num2_remove;
+  numbers[2] = num3;
+}
+
+void Display()
+{
+  screenOff();
+  digitalWrite(latchPin, LOW);
+
+  shiftOut(dataPin, clockPin, LSBFIRST, digits[numbers[count]] & (count == 1 ? dpOn : dpOff));
+
+  digitalWrite(anodePins[count], HIGH);
+  digitalWrite(latchPin, HIGH);
+  count++;
+  if (count == 3)
+  {
+    count = 0;
+  }
+}
+
+void screenOff()
+{
+  digitalWrite(D3, LOW);
+  digitalWrite(D2, LOW);
+  digitalWrite(D1, LOW);
+}
