@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "ezButton.h"
 #include "internalLED.h"
+#include "Display.h"
 
 const uint8_t LED_PIN = /*4; */ LED_BUILTIN;
 const uint8_t BUTTON_PIN = D6;
@@ -28,12 +29,24 @@ void setRunning(bool);
 #define CLOCK_PIN 14
 #define DATA_PIN 13
 
+#define DIGIT1_PIN D1
+#define DIGIT2_PIN D2
+#define DIGIT3_PIN D3
+
 int display_timer;
+
+Display leds = Display();
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println();
+
+  uint8_t digitPins[] = {DIGIT1_PIN, DIGIT2_PIN, DIGIT3_PIN};
+  leds.setup(LATCH_PIN, CLOCK_PIN, DATA_PIN, digitPins, 3);
+
+  const ledDigit numbers[] = {6, 6, 6};
+  leds.set(numbers, decimalPointOff); // decimalPointOff);
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
@@ -45,6 +58,7 @@ void setup()
 void loop()
 {
   button.loop();
+  leds.refresh();
   updateDisplay(elapsed, DISPLAY_EVERY);
 
   elapsed = millis() - started;
