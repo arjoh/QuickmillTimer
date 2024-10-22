@@ -80,7 +80,6 @@ void display(ulong value, uint8_t decimals)
   {
     leds.setNumber(value, decimals);
     displaying = value;
-    displayUpdated = millis();
   }
 }
 
