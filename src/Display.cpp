@@ -62,6 +62,26 @@ void Display::set(const ledDigit numbers[], const ledDigit decimalOn = std::null
     }
 }
 
+void Display::setNumber(uint value, uint8_t decimals)
+{
+    Serial.println(value);
+    ledDigit numbers[3];
+
+    for (uint8_t i = 0; i < numDigits; i++)
+    {
+        if (numDigits - i - 1 == 0 && value % 10 == 0)
+        {
+            numbers[numDigits - i - 1] = ledsOff;
+        }
+        else
+        {
+            numbers[numDigits - i - 1] = value % 10;
+        }
+        value /= 10;
+    }
+    set(numbers, numDigits - 1 - decimals);
+}
+
 void Display::refresh()
 {
     if (millis() - lastRefresh < refreshEvery)
@@ -108,6 +128,6 @@ void Display::digitSet(uint8_t digit, uint8_t value)
 {
     digitalWrite(latchPin, LOW);
     shiftOut(dataPin, clockPin, LSBFIRST, value);
-    digitalWrite(digitPins[digit], HIGH);
+    digitOn(digit);
     digitalWrite(latchPin, HIGH);
 }

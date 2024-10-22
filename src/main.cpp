@@ -12,17 +12,13 @@ const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
 bool running = false;
 
 ezButton button(BUTTON_PIN);
-u_char seconds = 5;
-u_long started = 0;
-u_long elapsed = 0;
+uint8_t seconds = 25;
+ulong started = 0;
+ulong elapsed = 0;
+ulong displaying = 0;
 
-// put function declarations here:
-void updateDisplay(float, u_short);
-float displaying = 0;
-u_long displayUpdated = 0;
-const u_short DISPLAY_EVERY = 100;
-void display(float, u_char);
-void refreshDisplay();
+// Function definitions
+void display(ulong, uint8_t);
 void setRunning(bool);
 
 #define LATCH_PIN 15
@@ -45,23 +41,27 @@ void setup()
   uint8_t digitPins[] = {DIGIT1_PIN, DIGIT2_PIN, DIGIT3_PIN};
   leds.setup(LATCH_PIN, CLOCK_PIN, DATA_PIN, digitPins, 3);
 
-  const ledDigit numbers[] = {6, 6, 6};
-  leds.set(numbers, decimalPointOff); // decimalPointOff);
+  display(666, 0);
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
-  display(seconds * 1000, 0);
+  display(seconds * 10, 1);
 }
 
 void loop()
 {
   button.loop();
   leds.refresh();
-  updateDisplay(elapsed, DISPLAY_EVERY);
+
+  if (running)
+  {
+    display(elapsed / 100, 1);
+  }
 
   elapsed = millis() - started;
+
   if (running && elapsed >= seconds * 1000)
   {
     setRunning(false);
@@ -74,26 +74,11 @@ void loop()
   }
 }
 
-void updateDisplay(float value, u_short displayEvery)
+void display(ulong value, uint8_t decimals)
 {
-  if (running)
-  {
-    u_long displayElapsed = millis() - displayUpdated;
-    if (displayElapsed >= displayEvery)
-    {
-      display(elapsed, 1);
-    }
-  }
-}
-
-void display(float value, u_char decimals)
-{
-
   if (value != displaying)
   {
-    char str[4];
-    dtostrf(value / 1000, decimals ? 4 : 2, decimals, str);
-    Serial.println(String(str));
+    leds.setNumber(value, decimals);
     displaying = value;
     displayUpdated = millis();
   }
@@ -114,6 +99,6 @@ void setRunning(bool to)
 
   if (!running)
   {
-    display(seconds * 1000, 0);
+    display(seconds * 10, 1);
   }
 }

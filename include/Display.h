@@ -8,9 +8,8 @@
 #define MAXNUMDIGITS 4
 #endif
 
-typedef std::optional<u_int8_t> ledDigit;
-const ledDigit digitOff = std::nullopt;
-const ledDigit decimalPointOff = std::nullopt;
+typedef std::optional<uint8_t> ledDigit;
+const ledDigit ledsOff = std::nullopt;
 
 class Display
 {
@@ -18,7 +17,8 @@ class Display
 public:
     Display();
     void setup(const uint8_t latchPin, const uint8_t clockPin, const uint8_t dataPin, const uint8_t digitPins[], uint8_t numDigits);
-    void set(const ledDigit nums[], ledDigit decimalOn);
+    void set(const ledDigit numbers[], ledDigit decimalOn);
+    void setNumber(uint value, uint8_t decimals);
     void refresh();
     void off();
 
