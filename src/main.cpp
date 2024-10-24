@@ -1,42 +1,80 @@
-#include <Arduino.h>
-#include <ezButton.h>
-#include <internalLED.h>
+#include "Arduino.h"
+#include "ezButton.h"
+#include "internalLED.h"
+#include "Display.h"
+#include "Timer.h"
 
-const int LED = /*4; */ LED_BUILTIN;
-const int LED_ON = LED == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
-const int LED_OFF = LED == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
+const uint8_t LED_PIN = /*4; */ LED_BUILTIN;
+const uint8_t BUTTON_PIN = D6;
+
+const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
+const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
 
 bool running = false;
 
-ezButton button(D1);
-u_char seconds = 5;
-u_long started = 0;
-u_long elapsed = 0;
+ezButton button(BUTTON_PIN);
+uint8_t seconds = 25;
+ulong started = 0;
+ulong elapsed = 0;
+ulong displaying = 0;
 
-// put function declarations here:
-void updateDisplay(float, u_short);
-float displaying = 0;
-u_long displayUpdated = 0;
-const u_short DISPLAY_EVERY = 100;
-void display(float, u_char);
-
+// Function definitions
+void ready();
+void display(ulong, uint8_t);
 void setRunning(bool);
+
+#define LATCH_PIN 15
+#define CLOCK_PIN 14
+#define DATA_PIN 13
+
+#define DIGIT1_PIN D1
+#define DIGIT2_PIN D2
+#define DIGIT3_PIN D3
+
+int display_timer;
+
+Display leds = Display();
 
 void setup()
 {
-  Serial.begin(9600);
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, LED_OFF);
+  Serial.begin(115200);
+  Serial.println();
+
+  uint8_t digitPins[] = {DIGIT1_PIN, DIGIT2_PIN, DIGIT3_PIN};
+  leds.setup(LATCH_PIN, CLOCK_PIN, DATA_PIN, digitPins, 3);
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
-  display(seconds * 1000, 0);
+
+  ready();
+}
+
+void ready()
+{
+  // Just for fun..
+  display(666, 0);
+  leds.setBlinking(true, 2600, 666, 334);
+  while (leds.isBlinking)
+  {
+    leds.refresh();
+  }
+  // Let's get started!
+  display(seconds * 10, 1);
 }
 
 void loop()
 {
   button.loop();
-  updateDisplay(elapsed, DISPLAY_EVERY);
+  leds.refresh();
+
+  if (running)
+  {
+    display(elapsed / 100, 1);
+  }
 
   elapsed = millis() - started;
+
   if (running && elapsed >= seconds * 1000)
   {
     setRunning(false);
@@ -49,28 +87,12 @@ void loop()
   }
 }
 
-void updateDisplay(float value, u_short displayEvery)
+void display(ulong value, uint8_t decimals)
 {
-  if (running)
-  {
-    u_long displayElapsed = millis() - displayUpdated;
-    if (displayElapsed >= displayEvery)
-    {
-      display(elapsed, 1);
-    }
-  }
-}
-
-void display(float value, u_char decimals)
-{
-
   if (value != displaying)
   {
-    char str[4];
-    dtostrf(value / 1000, decimals ? 4 : 2, decimals, str);
-    Serial.println(String(str));
+    leds.setNumber(value, decimals);
     displaying = value;
-    displayUpdated = millis();
   }
 }
 
@@ -78,7 +100,7 @@ void display(float value, u_char decimals)
 void setRunning(bool to)
 {
   running = to;
-  digitalWrite(LED, running ? LED_ON : LED_OFF);
+  digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
   Serial.printf("running: %s\n", running ? "true" : "false");
   if (!running)
   {
@@ -89,6 +111,6 @@ void setRunning(bool to)
 
   if (!running)
   {
-    display(seconds * 1000, 0);
+    display(seconds * 10, 1);
   }
 }
