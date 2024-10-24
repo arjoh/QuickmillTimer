@@ -2,6 +2,7 @@
 #include "ezButton.h"
 #include "internalLED.h"
 #include "Display.h"
+#include "Timer.h"
 
 const uint8_t LED_PIN = /*4; */ LED_BUILTIN;
 const uint8_t BUTTON_PIN = D6;
@@ -18,6 +19,7 @@ ulong elapsed = 0;
 ulong displaying = 0;
 
 // Function definitions
+void ready();
 void display(ulong, uint8_t);
 void setRunning(bool);
 
@@ -41,12 +43,23 @@ void setup()
   uint8_t digitPins[] = {DIGIT1_PIN, DIGIT2_PIN, DIGIT3_PIN};
   leds.setup(LATCH_PIN, CLOCK_PIN, DATA_PIN, digitPins, 3);
 
-  display(666, 0);
-
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
+  ready();
+}
+
+void ready()
+{
+  // Just for fun..
+  display(666, 0);
+  leds.setBlinking(true, 2600, 666, 334);
+  while (leds.isBlinking)
+  {
+    leds.refresh();
+  }
+  // Let's get started!
   display(seconds * 10, 1);
 }
 

@@ -44,7 +44,16 @@ void Display::setup(const uint8_t latchPin, const uint8_t clockPin, const uint8_
 
     lastRefresh = millis();
     nextDigit = 0;
-    refreshEvery = 5;
+    refreshEvery = 1;
+
+    blinkFor = 0; // forever
+    blinkOnFor = 500;
+    blinkOffFor = 500;
+    firstBlinked = 0;
+    lastBlinked = 0;
+
+    blinkOn = true;
+    isBlinking = false;
 }
 
 void Display::set(const ledDigit numbers[], const ledDigit decimalOn = std::nullopt)
@@ -79,11 +88,80 @@ void Display::setNumber(uint value, uint8_t decimals)
         }
         value /= 10;
     }
-    set(numbers, numDigits - 1 - decimals);
+    set(numbers, decimals > 0 ? numDigits - 1 - decimals : ledsOff);
+}
+
+void Display::setBlinking(bool blinking)
+{
+    setBlinking(blinkFor, 0);
+}
+
+void Display::setBlinking(bool blinking, uint blinkFor)
+{
+    setBlinking(blinkFor, blinkFor, blinkOnFor, blinkOffFor);
+}
+
+void Display::setBlinking(bool blinking, uint blinkFor, uint blinkOnFor, uint blinkOffFor)
+{
+    this->isBlinking = blinking;
+    this->blinkFor = blinkFor;
+    this->blinkOnFor = blinkOnFor;
+    this->blinkOffFor = blinkOffFor;
+
+    if (!blinking)
+    {
+        this->firstBlinked = 0;
+        this->lastBlinked = 0;
+    }
+    Serial.printf("setBlinking(%s);\n", blinking ? "true" : "false");
+    Serial.printf("\tthis->isBlinking = %d;\n", this->isBlinking);
+    Serial.printf("\tthis->blinkFor = %d;\n", this->blinkFor);
+    Serial.printf("\tthis->blinkOnFor = %d;\n", this->blinkOnFor);
+    Serial.printf("\tthis->blinkOffFor = %d;\n", this->blinkOffFor);
+    Serial.printf("\tthis->firstBlinked = %lu;\n", this->firstBlinked);
+    Serial.printf("\tthis->lastBlinked = %lu;\n", this->lastBlinked);
+}
+
+void Display::blink()
+{
+    if (isBlinking)
+    {
+        if (blinkFor > 0 && millis() - firstBlinked >= blinkFor)
+        {
+            setBlinking(false);
+        }
+
+        if (blinkOn && millis() - lastBlinked >= blinkOnFor)
+        {
+            blinkOn = false;
+            lastBlinked = millis();
+        }
+
+        if (!blinkOn && millis() - lastBlinked >= blinkOffFor)
+        {
+            blinkOn = true;
+            lastBlinked = millis();
+        }
+
+        if (firstBlinked == 0)
+        {
+            firstBlinked = millis();
+        }
+    }
 }
 
 void Display::refresh()
 {
+    if (isBlinking)
+    {
+        blink();
+        if (!blinkOn)
+        {
+            off();
+            return;
+        }
+    }
+
     if (millis() - lastRefresh < refreshEvery)
     {
         return;
