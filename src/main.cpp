@@ -10,18 +10,31 @@ const uint8_t BUTTON_PIN = D6;
 const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
 
-bool running = false;
-
 ezButton button(BUTTON_PIN);
+bool ignoreNextButtonEvent = false;
+
+// running related settings/variables
 uint8_t seconds = 25;
-ulong started = 0;
-ulong elapsed = 0;
+bool running = false;
+ulong runningSince = 0;
+ulong runningFor = 0;
+
+// setting related settings/variables
+ulong btnPressedAt = 0;
+ulong btnPressedSince = 0;
+uint resetAfter = 3000;
+uint settingAfter = 5000;
+bool reset = false;
+bool setting = false;
+
 ulong displaying = 0;
 
 // Function definitions
 void ready();
 void display(ulong, uint8_t);
 void setRunning(bool);
+void handleRunning();
+void handleButton();
 
 #define LATCH_PIN 15
 #define CLOCK_PIN 14
@@ -67,20 +80,31 @@ void loop()
 {
   button.loop();
   leds.refresh();
+  handleRunning();
+  handleButton();
+}
 
+void handleRunning()
+{
   if (running)
   {
-    display(elapsed / 100, 1);
+    runningFor = millis() - runningSince;
+    display(runningFor / 100, 1);
+    if (running && runningFor >= seconds * 1000)
+    {
+      setRunning(false);
+    }
   }
+}
 
-  elapsed = millis() - started;
-
-  if (running && elapsed >= seconds * 1000)
+void handleButton()
+{
+  // Ignore any button event in this iteration
+  if (ignoreNextButtonEvent)
   {
-    setRunning(false);
+    ignoreNextButtonEvent = false;
     return;
   }
-
   if (button.isReleased())
   {
     setRunning(!running);
@@ -96,21 +120,29 @@ void display(ulong value, uint8_t decimals)
   }
 }
 
-// put function definitions here:
 void setRunning(bool to)
 {
+  // Don't do anything if running doesn't change.
+  if (running == to)
+  {
+    return;
+  }
+
   running = to;
   digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
   Serial.printf("running: %s\n", running ? "true" : "false");
   if (!running)
   {
-    Serial.printf("elasped: %lu\n", elapsed);
+    Serial.printf("elasped: %lu\n", runningFor);
   }
-  started = running * millis();
-  elapsed = 0;
+  runningSince = running * millis();
+  runningFor = 0;
 
   if (!running)
   {
     display(seconds * 10, 1);
   }
+
+  // We just changed running, so ignore the next button release.
+  ignoreNextButtonEvent = true;
 }
