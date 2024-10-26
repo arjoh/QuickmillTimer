@@ -11,7 +11,7 @@ const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
 
 ezButton button(BUTTON_PIN);
-bool ignoreNextButtonEvent = false;
+bool ignoreNextButtonRelease = false;
 
 // running related settings/variables
 uint8_t seconds = 25;
@@ -21,7 +21,7 @@ ulong runningFor = 0;
 
 // setting related settings/variables
 ulong btnPressedAt = 0;
-ulong btnPressedSince = 0;
+ulong btnPressedFor = 0;
 uint resetAfter = 3000;
 uint settingAfter = 5000;
 bool reset = false;
@@ -33,8 +33,11 @@ ulong displaying = 0;
 void ready();
 void display(ulong, uint8_t);
 void setRunning(bool);
-void handleRunning();
-void handleButton();
+void checkSetting();
+void checkRunning();
+void checkButton();
+void handleButtonPressed();
+void handleButtonReleased();
 
 #define LATCH_PIN 15
 #define CLOCK_PIN 14
@@ -67,7 +70,7 @@ void ready()
 {
   // Just for fun..
   display(666, 0);
-  leds.setBlinking(true, 2600, 666, 334);
+  leds.setBlinking(true, 2664, 666, 333);
   while (leds.isBlinking)
   {
     leds.refresh();
@@ -78,37 +81,77 @@ void ready()
 
 void loop()
 {
-  button.loop();
   leds.refresh();
-  handleRunning();
-  handleButton();
+  checkRunning();
+  checkButton();
+  checkSetting();
 }
 
-void handleRunning()
+void checkSetting()
+{
+  if (btnPressedAt > 0)
+  {
+    btnPressedFor = millis() - btnPressedAt;
+    if (btnPressedFor > 1500)
+    {
+      ignoreNextButtonRelease = true;
+    }
+    if (!reset && btnPressedFor >= resetAfter)
+    {
+      Serial.printf("btnPressedFor: %lu\n", btnPressedFor);
+      Serial.println("reset");
+      seconds = 0;
+      display(seconds, 1);
+      leds.setBlinking(true, 1000, 200, 200);
+      reset = true;
+    }
+  }
+}
+void checkRunning()
 {
   if (running)
   {
     runningFor = millis() - runningSince;
     display(runningFor / 100, 1);
-    if (running && runningFor >= seconds * 1000)
+    if (running && seconds > 0 && runningFor >= seconds * 1000)
     {
       setRunning(false);
     }
   }
 }
 
-void handleButton()
+void checkButton()
 {
-  // Ignore any button event in this iteration
-  if (ignoreNextButtonEvent)
+  button.loop();
+  if (button.isPressed())
   {
-    ignoreNextButtonEvent = false;
-    return;
+    handleButtonPressed();
   }
   if (button.isReleased())
   {
+    handleButtonReleased();
+  }
+}
+
+void handleButtonPressed()
+{
+  btnPressedAt = millis();
+  printf("btnPressedAt: %lu\n", btnPressedAt);
+}
+
+void handleButtonReleased()
+{
+  if (ignoreNextButtonRelease)
+  {
+    ignoreNextButtonRelease = false;
+  }
+  else
+  {
     setRunning(!running);
   }
+  btnPressedAt = 0;
+  btnPressedFor = 0;
+  reset = false;
 }
 
 void display(ulong value, uint8_t decimals)
@@ -135,7 +178,7 @@ void setRunning(bool to)
   {
     Serial.printf("elasped: %lu\n", runningFor);
   }
-  runningSince = running * millis();
+  runningSince = running ? millis() : 0;
   runningFor = 0;
 
   if (!running)
@@ -144,5 +187,5 @@ void setRunning(bool to)
   }
 
   // We just changed running, so ignore the next button release.
-  ignoreNextButtonEvent = true;
+  ignoreNextButtonRelease = true;
 }
