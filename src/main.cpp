@@ -11,7 +11,6 @@ const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
 
 ezButton button(BUTTON_PIN);
-bool ignoreNextButtonRelease = false;
 
 // running related settings/variables
 uint8_t seconds = 25;
@@ -23,8 +22,8 @@ ulong runningFor = 0;
 ulong btnPressedAt = 0;
 ulong btnPressedFor = 0;
 uint resetAfter = 3000;
-uint settingAfter = 5000;
-bool reset = false;
+uint settingAfter = 4000;
+float settingSpeed = 3;
 bool setting = false;
 
 ulong displaying = 0;
@@ -89,21 +88,23 @@ void loop()
 
 void checkSetting()
 {
-  if (btnPressedAt > 0)
+  // Don't respond to presses while running
+  if (!running && btnPressedAt > 0)
   {
     btnPressedFor = millis() - btnPressedAt;
-    if (btnPressedFor > 1500)
-    {
-      ignoreNextButtonRelease = true;
-    }
-    if (!reset && btnPressedFor >= resetAfter)
+    if (!setting && btnPressedFor >= resetAfter)
     {
       Serial.printf("btnPressedFor: %lu\n", btnPressedFor);
       Serial.println("reset");
       seconds = 0;
       display(seconds, 1);
       leds.setBlinking(true, 1000, 200, 200);
-      reset = true;
+      setting = true;
+    }
+    else if (setting && btnPressedFor >= settingAfter)
+    {
+      seconds = settingSpeed * (btnPressedFor - settingAfter) / 1000;
+      display(seconds * 10, 1);
     }
   }
 }
@@ -141,9 +142,9 @@ void handleButtonPressed()
 
 void handleButtonReleased()
 {
-  if (ignoreNextButtonRelease)
+  if (setting)
   {
-    ignoreNextButtonRelease = false;
+    setting = false;
   }
   else
   {
@@ -151,7 +152,6 @@ void handleButtonReleased()
   }
   btnPressedAt = 0;
   btnPressedFor = 0;
-  reset = false;
 }
 
 void display(ulong value, uint8_t decimals)
@@ -185,7 +185,4 @@ void setRunning(bool to)
   {
     display(seconds * 10, 1);
   }
-
-  // We just changed running, so ignore the next button release.
-  ignoreNextButtonRelease = true;
 }
