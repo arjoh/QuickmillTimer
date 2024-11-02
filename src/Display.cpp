@@ -98,7 +98,7 @@ void Display::setBlinking(bool blinking)
 
 void Display::setBlinking(bool blinking, uint blinkFor)
 {
-    setBlinking(blinkFor, blinkFor, blinkOnFor, blinkOffFor);
+    setBlinking(blinkFor, blinkFor, 500, 500);
 }
 
 void Display::setBlinking(bool blinking, uint blinkFor, uint blinkOnFor, uint blinkOffFor)
@@ -108,11 +108,17 @@ void Display::setBlinking(bool blinking, uint blinkFor, uint blinkOnFor, uint bl
     this->blinkOnFor = blinkOnFor;
     this->blinkOffFor = blinkOffFor;
 
-    if (!blinking)
+    if (blinking)
+    {
+        this->firstBlinked = millis();
+        this->lastBlinked = this->firstBlinked;
+    }
+    else
     {
         this->firstBlinked = 0;
         this->lastBlinked = 0;
     }
+
     Serial.printf("setBlinking(%s);\n", blinking ? "true" : "false");
     Serial.printf("\tthis->isBlinking = %d;\n", this->isBlinking);
     Serial.printf("\tthis->blinkFor = %d;\n", this->blinkFor);
@@ -141,11 +147,6 @@ void Display::blink()
         {
             blinkOn = true;
             lastBlinked = millis();
-        }
-
-        if (firstBlinked == 0)
-        {
-            firstBlinked = millis();
         }
     }
 }

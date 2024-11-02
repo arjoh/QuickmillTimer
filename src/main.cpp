@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include "Arduino.h"
 #include "ezButton.h"
 #include "internalLED.h"
@@ -10,18 +11,42 @@ const uint8_t BUTTON_PIN = D6;
 const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
 
-bool running = false;
-
 ezButton button(BUTTON_PIN);
+
+// running related settings/variables
 uint8_t seconds = 25;
-ulong started = 0;
-ulong elapsed = 0;
+bool running = false;
+ulong runningSince = 0;
+ulong runningFor = 0;
+
+// setting related settings/variables
+ulong btnPressedAt = 0;
+ulong btnPressedFor = 0;
+uint resetAfter = 3000;
+uint settingAfter = 4000;
+float settingSpeed = 3;
+bool setting = false;
+
 ulong displaying = 0;
 
 // Function definitions
 void ready();
 void display(ulong, uint8_t);
 void setRunning(bool);
+void checkSetting();
+void checkRunning();
+void checkButton();
+void handleButtonPressed();
+void handleButtonReleased();
+void readSettings();
+void writeSettings();
+
+uint settingsAddress = 0;
+uint settingsSize = 8;
+struct
+{
+  uint8_t seconds;
+} settings;
 
 #define LATCH_PIN 15
 #define CLOCK_PIN 14
@@ -47,6 +72,7 @@ void setup()
   digitalWrite(LED_PIN, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
+  readSettings();
   ready();
 }
 
@@ -54,7 +80,7 @@ void ready()
 {
   // Just for fun..
   display(666, 0);
-  leds.setBlinking(true, 2600, 666, 334);
+  leds.setBlinking(true, 2664, 666, 333);
   while (leds.isBlinking)
   {
     leds.refresh();
@@ -65,26 +91,93 @@ void ready()
 
 void loop()
 {
-  button.loop();
   leds.refresh();
+  checkRunning();
+  checkButton();
+  checkSetting();
+}
 
+void checkSetting()
+{
+  // Don't respond to presses while running
+  if (!running && btnPressedAt > 0)
+  {
+    btnPressedFor = millis() - btnPressedAt;
+    if (!setting && btnPressedFor >= resetAfter)
+    {
+      Serial.printf("btnPressedFor: %lu\n", btnPressedFor);
+      Serial.println("reset");
+      seconds = 0;
+      display(seconds, 1);
+      leds.setBlinking(true, 1000, 200, 200);
+      setting = true;
+    }
+    else if (setting && btnPressedFor >= settingAfter)
+    {
+      seconds = settingSpeed * (btnPressedFor - settingAfter) / 1000;
+      display(seconds * 10, 1);
+    }
+  }
+}
+void checkRunning()
+{
   if (running)
   {
-    display(elapsed / 100, 1);
+    runningFor = millis() - runningSince;
+    display(runningFor / 100, 1);
+    if (running && seconds > 0 && runningFor >= seconds * 1000)
+    {
+      setRunning(false);
+    }
   }
+}
 
-  elapsed = millis() - started;
-
-  if (running && elapsed >= seconds * 1000)
+void checkButton()
+{
+  button.loop();
+  if (button.isPressed())
   {
-    setRunning(false);
-    return;
+    handleButtonPressed();
   }
-
   if (button.isReleased())
+  {
+    handleButtonReleased();
+  }
+}
+
+void handleButtonPressed()
+{
+  btnPressedAt = millis();
+  printf("btnPressedAt: %lu\n", btnPressedAt);
+}
+
+void handleButtonReleased()
+{
+  if (setting)
+  {
+    writeSettings();
+    setting = false;
+  }
+  else
   {
     setRunning(!running);
   }
+  btnPressedAt = 0;
+  btnPressedFor = 0;
+}
+
+void readSettings()
+{
+  EEPROM.begin(settingsSize);
+  EEPROM.get(settingsAddress, settings);
+  seconds = settings.seconds;
+}
+
+void writeSettings()
+{
+  settings.seconds = seconds;
+  EEPROM.put(settingsAddress, settings);
+  EEPROM.commit();
 }
 
 void display(ulong value, uint8_t decimals)
@@ -96,18 +189,23 @@ void display(ulong value, uint8_t decimals)
   }
 }
 
-// put function definitions here:
 void setRunning(bool to)
 {
+  // Don't do anything if running doesn't change.
+  if (running == to)
+  {
+    return;
+  }
+
   running = to;
   digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
   Serial.printf("running: %s\n", running ? "true" : "false");
   if (!running)
   {
-    Serial.printf("elasped: %lu\n", elapsed);
+    Serial.printf("elasped: %lu\n", runningFor);
   }
-  started = running * millis();
-  elapsed = 0;
+  runningSince = running ? millis() : 0;
+  runningFor = 0;
 
   if (!running)
   {
