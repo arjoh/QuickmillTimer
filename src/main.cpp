@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include "Arduino.h"
 #include "ezButton.h"
 #include "internalLED.h"
@@ -37,6 +38,15 @@ void checkRunning();
 void checkButton();
 void handleButtonPressed();
 void handleButtonReleased();
+void readSettings();
+void writeSettings();
+
+uint settingsAddress = 0;
+uint settingsSize = 8;
+struct
+{
+  uint8_t seconds;
+} settings;
 
 #define LATCH_PIN 15
 #define CLOCK_PIN 14
@@ -62,6 +72,7 @@ void setup()
   digitalWrite(LED_PIN, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
+  readSettings();
   ready();
 }
 
@@ -144,6 +155,7 @@ void handleButtonReleased()
 {
   if (setting)
   {
+    writeSettings();
     setting = false;
   }
   else
@@ -152,6 +164,20 @@ void handleButtonReleased()
   }
   btnPressedAt = 0;
   btnPressedFor = 0;
+}
+
+void readSettings()
+{
+  EEPROM.begin(settingsSize);
+  EEPROM.get(settingsAddress, settings);
+  seconds = settings.seconds;
+}
+
+void writeSettings()
+{
+  settings.seconds = seconds;
+  EEPROM.put(settingsAddress, settings);
+  EEPROM.commit();
 }
 
 void display(ulong value, uint8_t decimals)
