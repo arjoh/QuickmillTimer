@@ -4,7 +4,6 @@
 #include "Arduino.h"
 #include "ezButton.h"
 #include "internalLED.h"
-#include "Display.h"
 #include "OLED.h"
 
 const uint8_t LED_PIN = /*4; */ LED_BUILTIN;
@@ -32,7 +31,7 @@ bool setting = false;
 ulong displaying = 0;
 
 // Function definitions
-// void ready();
+void ready();
 void display(ulong, uint8_t);
 void setRunning(bool);
 void checkSetting();
@@ -50,23 +49,11 @@ struct
   uint8_t seconds;
 } settings;
 
-#define LATCH_PIN 15
-#define CLOCK_PIN 14
-#define DATA_PIN 13
-
-#define DIGIT1_PIN D1
-#define DIGIT2_PIN D2
-#define DIGIT3_PIN D3
-
-int display_timer;
-
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
-Display leds = Display();
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 OLED oled = OLED();
-
 
 void setup()
 {
@@ -74,86 +61,35 @@ void setup()
   Serial.println();
 
   oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT);
-  // uint8_t digitPins[] = {DIGIT1_PIN, DIGIT2_PIN, DIGIT3_PIN};
-  // leds.setup(LATCH_PIN, CLOCK_PIN, DATA_PIN, digitPins, 3);
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
-  if (!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-  { // Address 0x3D for 128x64
-    Serial.println(F("SSD1306 allocation failed"));
-    for (;;)
-      ;
-  }
-
-  oled.clearDisplay();
-  oled.setTextColor(WHITE);
-  oled.display();
-
   readSettings();
 
-  oled.setCursor(0, 0);
-  oled.setTextSize(1); // 6x8
-  oled.println("QuickmillTimer");
-  oled.println();
-
-  int number = 666;
-  int decimals = 1;
-  int size = trunc(log10(number)) + 1;
-
-  int large = 6;
-  int small = 5;
-
-  uint8_t x = (128 - large * 6 * (size - decimals) - small * 6 * decimals) / 2;
-  uint8_t y = 16;
-
-  Serial.print("x: ");
-  Serial.println(x);
-  Serial.print("y: ");
-  Serial.println(y);
-
-  oled.setCursor(x, y);
-
-  Serial.print("number: ");
-  Serial.println(number);
-  Serial.print("decimals: ");
-  Serial.println(decimals);
-  Serial.print("pow(10, decimals): ");
-  Serial.println(pow(10, decimals));
-
-  int displayLarge = number / pow(10, decimals);
-  Serial.print("displayLarge: ");
-  Serial.println(displayLarge);
-  int displaySmall = number - (displayLarge * pow(10, decimals));
-  Serial.print("displaySmall: ");
-  Serial.println(displaySmall);
-
-  oled.setTextSize(large);
-  oled.print(displayLarge);
-  oled.setTextSize(small);
-  oled.println(displaySmall);
-  oled.display();
-  // ready();
+  ready();
 }
 
-// void ready()
-// {
-//   // Just for fun..
-//   display(666, 0);
-//   leds.setBlinking(true, 2664, 666, 333);
-//   while (leds.isBlinking)
-//   {
-//     leds.refresh();
-//   }
-//   // Let's get started!
-//   display(seconds * 10, 1);
-// }
+void ready()
+{
+  // Just for fun..
+  display(666, 0);
+  oled.refresh();
+  delay(1500);
+  // leds.setBlinking(true, 2664, 666, 333);
+  // while (leds.isBlinking)
+  // {
+  //   leds.refresh();
+  // }
+  // Let's get started!
+  oled.setHeader("QuickmillTimer");
+  display(seconds * 10, 1);
+}
 
 void loop()
 {
-  // leds.refresh();
+  // oled.refresh();
   checkRunning();
   checkButton();
   checkSetting();
@@ -246,9 +182,10 @@ void display(ulong value, uint8_t decimals)
 {
   if (value != displaying)
   {
-    // leds.setNumber(value, decimals);
-    Serial1.println(value);
+    oled.setNumber(value, decimals);
+    Serial.println(value);
     displaying = value;
+    oled.refresh();// TODO move to loop and leave refresh interval to OLED.h
   }
 }
 
