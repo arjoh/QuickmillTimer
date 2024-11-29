@@ -20,7 +20,13 @@ public:
     void setHeader(String header);
     void setNumber(uint number, uint8_t decimals);
 
+    void setBlinking(bool blinking);
+    void setBlinking(bool blinking, uint blinkFor);
+    void setBlinking(bool blinking, uint blinkFor, uint blinkOnFor, uint blinkOffFor);
+    bool isBlinking;
+
     void refresh();
+    void off();
 
 protected:
     uint8_t numDigits;
@@ -41,9 +47,20 @@ protected:
     uint value;
     uint8_t decimals;
 
+    bool blinkOn;
+
 private:
     void setTextCursor();
     Cursor textCursor = Cursor();
+    ulong lastRefresh;
+    uint refreshEvery;
+
+    uint blinkOnFor;
+    uint blinkOffFor;
+
+    uint blinkFor;
+    ulong firstBlinked;
+    ulong lastBlinked;
 };
 
 #endif // OLED_h

@@ -20,6 +20,21 @@ void OLED::setup(uint8_t w, uint8_t h, uint8_t numDigits)
     this->w = w;
     this->h = h;
     this->numDigits = numDigits;
+
+    off();
+
+    lastRefresh = millis();
+    refreshEvery = 1;
+
+    blinkFor = 0; // forever
+    blinkOnFor = 500;
+    blinkOffFor = 500;
+    firstBlinked = 0;
+    lastBlinked = 0;
+
+    blinkOn = true;
+    isBlinking = false;
+
     oled.clearDisplay();
     oled.setTextColor(WHITE);
     oled.display();
@@ -43,6 +58,36 @@ void OLED::setNumber(uint value, uint8_t decimals)
     Serial.printf("decimals: %u\n", decimals);
 
     setTextCursor();
+}
+
+void OLED::setBlinking(bool blinking)
+{
+    setBlinking(blinkFor, 0);
+}
+
+void OLED::setBlinking(bool blinking, uint blinkFor)
+{
+    setBlinking(blinkFor, blinkFor, 500, 500);
+}
+
+void OLED::setBlinking(bool blinking, uint blinkFor, uint blinkOnFor,
+                       uint blinkOffFor)
+{
+    this->isBlinking = blinking;
+    this->blinkFor = blinkFor;
+    this->blinkOnFor = blinkOnFor;
+    this->blinkOffFor = blinkOffFor;
+
+    if (blinking)
+    {
+        this->firstBlinked = millis();
+        this->lastBlinked = this->firstBlinked;
+    }
+    else
+    {
+        this->firstBlinked = 0;
+        this->lastBlinked = 0;
+    }
 }
 
 void OLED::refresh()
@@ -75,6 +120,12 @@ void OLED::refresh()
     }
 
     // oled.println();
+    oled.display();
+}
+
+void OLED::off()
+{
+    oled.clearDisplay();
     oled.display();
 }
 
