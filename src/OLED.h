@@ -16,14 +16,15 @@ class OLED
 public:
     OLED();
 
-    void setup(uint8_t w, uint8_t h);
+    void setup(uint8_t w, uint8_t h, uint8_t numDigits);
     void setHeader(String header);
     void setNumber(uint number, uint8_t decimals);
 
     void refresh();
 
 protected:
-private:
+    uint8_t numDigits;
+
     Adafruit_SSD1306 oled;
 
     uint8_t h;
@@ -33,12 +34,14 @@ private:
     uint8_t smallTextSize = 5;
 
     String header;
-    
+
     uint8_t headerTextSize = 1;
     uint8_t headerMargin = 4;
 
     uint value;
     uint8_t decimals;
+
+private:
     void setTextCursor();
     Cursor textCursor = Cursor();
 };

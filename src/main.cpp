@@ -51,6 +51,7 @@ struct
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define NUM_DIGITS 3
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 OLED oled = OLED();
@@ -60,7 +61,7 @@ void setup()
   Serial.begin(115200);
   Serial.println();
 
-  oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT);
+  oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT, NUM_DIGITS);
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
@@ -185,7 +186,7 @@ void display(ulong value, uint8_t decimals)
     oled.setNumber(value, decimals);
     Serial.println(value);
     displaying = value;
-    oled.refresh();// TODO move to loop and leave refresh interval to OLED.h
+    oled.refresh(); // TODO move to loop and leave refresh interval to OLED.h
   }
 }
 

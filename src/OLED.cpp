@@ -7,7 +7,7 @@ OLED::OLED()
     textCursor.x = 0;
     textCursor.y = 0;
 }
-void OLED::setup(uint8_t w, uint8_t h)
+void OLED::setup(uint8_t w, uint8_t h, uint8_t numDigits)
 {
     oled = Adafruit_SSD1306(w, h, &Wire, -1);
     if (!oled.begin(SSD1306_SWITCHCAPVCC,
@@ -19,8 +19,12 @@ void OLED::setup(uint8_t w, uint8_t h)
     }
     this->w = w;
     this->h = h;
+    this->numDigits = numDigits;
     oled.clearDisplay();
     oled.setTextColor(WHITE);
+    oled.display();
+
+    setTextCursor();
 }
 
 void OLED::setHeader(String header)
@@ -52,25 +56,32 @@ void OLED::refresh()
         oled.println(header);
     }
 
+    uint8_t size = value < 10 ? 1 + decimals : trunc(log10(value)) + 1;
     uint large = value / pow(10, decimals);
     uint small = value - large * pow(10, decimals);
 
-    Serial.printf("large: %u\n", large);
-    Serial.printf("small: %u\n", small);
-
     oled.setCursor(textCursor.x, textCursor.y);
     oled.setTextSize(largeTextSize);
+    for (uint8_t i = 0; i < numDigits - size; i++)
+    {
+        oled.print(" ");
+    }
     oled.print(large);
-    oled.setTextSize(smallTextSize);
-    oled.println(small);
 
+    if (decimals > 0)
+    {
+        oled.setTextSize(smallTextSize);
+        oled.print(small);
+    }
+
+    // oled.println();
     oled.display();
 }
 
 void OLED::setTextCursor()
 {
     // 6x8
-    uint16_t size = trunc(log10(value)) + 1;
-    textCursor.x = (w - largeTextSize * 6 * (size - decimals) - smallTextSize * 6 * decimals) / 2;
+    // uint16_t size = trunc(log10(value)) + 1;
+    textCursor.x = (w - largeTextSize * 6 * numDigits) / 2;
     textCursor.y = header != "" ? (headerTextSize * 8 + headerMargin) : 0;
 }
