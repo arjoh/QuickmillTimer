@@ -1,9 +1,8 @@
-#include <optional>
-
 #ifndef Display_h
 #define Display_h
 #include "Arduino.h"
 
+#include <optional>
 #ifndef MAXNUMDIGITS
 #define MAXNUMDIGITS 4
 #endif

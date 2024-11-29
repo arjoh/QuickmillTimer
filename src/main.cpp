@@ -1,13 +1,11 @@
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
-#include <Wire.h>
 #include <cmath>
 
 #include "Arduino.h"
 #include "ezButton.h"
 #include "internalLED.h"
 #include "Display.h"
+#include "OLED.h"
 
 const uint8_t LED_PIN = /*4; */ LED_BUILTIN;
 const uint8_t BUTTON_PIN = D6;
@@ -65,15 +63,17 @@ int display_timer;
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
+Display leds = Display();
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+OLED oled = OLED();
 
-Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println();
 
+  oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT);
   // uint8_t digitPins[] = {DIGIT1_PIN, DIGIT2_PIN, DIGIT3_PIN};
   // leds.setup(LATCH_PIN, CLOCK_PIN, DATA_PIN, digitPins, 3);
 
