@@ -26,9 +26,11 @@ public:
     bool isBlinking;
 
     void refresh();
+    void clearText();
     void off();
 
 protected:
+    virtual void blink();
     uint8_t numDigits;
 
     Adafruit_SSD1306 oled;
@@ -54,6 +56,7 @@ private:
     Cursor textCursor = Cursor();
     ulong lastRefresh;
     uint refreshEvery;
+    bool changed = false;
 
     uint blinkOnFor;
     uint blinkOffFor;

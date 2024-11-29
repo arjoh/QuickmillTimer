@@ -76,21 +76,20 @@ void ready()
 {
   // Just for fun..
   display(666, 0);
-  oled.refresh();
-  delay(1500);
-  // leds.setBlinking(true, 2664, 666, 333);
-  // while (leds.isBlinking)
-  // {
-  //   leds.refresh();
-  // }
-  // Let's get started!
   oled.setHeader("QuickmillTimer");
+  oled.refresh();
+  oled.setBlinking(true, 2664, 666, 333);
+  while (oled.isBlinking)
+  {
+    oled.refresh();
+  }
+  // Let's get started!
   display(seconds * 10, 1);
 }
 
 void loop()
 {
-  // oled.refresh();
+  oled.refresh();
   checkRunning();
   checkButton();
   checkSetting();
@@ -108,7 +107,7 @@ void checkSetting()
       Serial.println("reset");
       seconds = 0;
       display(seconds, 1);
-      // leds.setBlinking(true, 1000, 200, 200);
+      oled.setBlinking(true, 1000, 200, 200);
       setting = true;
     }
     else if (setting && btnPressedFor >= settingAfter)
@@ -186,7 +185,7 @@ void display(ulong value, uint8_t decimals)
     oled.setNumber(value, decimals);
     Serial.println(value);
     displaying = value;
-    oled.refresh(); // TODO move to loop and leave refresh interval to OLED.h
+    // oled.refresh(); // TODO move to loop and leave refresh interval to OLED.h
   }
 }
 

@@ -36,7 +36,7 @@ void OLED::setup(uint8_t w, uint8_t h, uint8_t numDigits)
     isBlinking = false;
 
     oled.clearDisplay();
-    oled.setTextColor(WHITE);
+    oled.setTextColor(WHITE, BLACK);
     oled.display();
 
     setTextCursor();
@@ -45,6 +45,7 @@ void OLED::setup(uint8_t w, uint8_t h, uint8_t numDigits)
 void OLED::setHeader(String header)
 {
     this->header = header;
+    this->changed = true;
 
     setTextCursor();
 }
@@ -53,9 +54,7 @@ void OLED::setNumber(uint value, uint8_t decimals)
 {
     this->value = value;
     this->decimals = decimals;
-
-    Serial.printf("value: %u\n", value);
-    Serial.printf("decimals: %u\n", decimals);
+    this->changed = true;
 
     setTextCursor();
 }
@@ -90,8 +89,44 @@ void OLED::setBlinking(bool blinking, uint blinkFor, uint blinkOnFor,
     }
 }
 
+void OLED::blink()
+{
+    if (isBlinking)
+    {
+        if (blinkFor > 0 && millis() - firstBlinked >= blinkFor)
+        {
+            setBlinking(false);
+        }
+
+        if (blinkOn && millis() - lastBlinked >= blinkOnFor)
+        {
+            blinkOn = false;
+            lastBlinked = millis();
+        }
+
+        if (!blinkOn && millis() - lastBlinked >= blinkOffFor)
+        {
+            blinkOn = true;
+            lastBlinked = millis();
+        }
+    }
+}
 void OLED::refresh()
 {
+    if (isBlinking)
+    {
+        blink();
+        if (!blinkOn)
+        {
+            clearText();
+            return;
+        }
+    }
+    else if (!changed)
+    {
+        return;
+    }
+
     oled.clearDisplay();
 
     if (header != "")
@@ -120,6 +155,18 @@ void OLED::refresh()
     }
 
     // oled.println();
+    oled.display();
+    changed = false;
+}
+
+void OLED::clearText()
+{
+    oled.setCursor(textCursor.x, textCursor.y);
+    oled.setTextSize(largeTextSize);
+    for (uint8_t i = 0; i < numDigits; i++)
+    {
+        oled.print(" ");
+    }
     oled.display();
 }
 
