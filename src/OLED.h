@@ -1,0 +1,69 @@
+#ifndef OLED_h
+#define OLED_h
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Wire.h>
+
+typedef struct
+{
+    int16_t x;
+    int16_t y;
+} Cursor;
+
+class OLED
+{
+public:
+    OLED();
+
+    void setup(uint8_t w, uint8_t h, uint8_t numDigits);
+    void setHeader(String header);
+    void setNumber(uint number, uint8_t decimals);
+
+    void setBlinking(bool blinking);
+    void setBlinking(bool blinking, uint blinkFor);
+    void setBlinking(bool blinking, uint blinkFor, uint blinkOnFor, uint blinkOffFor);
+    bool isBlinking;
+
+    void refresh();
+    void clearText();
+    void off();
+
+protected:
+    virtual void blink();
+    uint8_t numDigits;
+
+    Adafruit_SSD1306 oled;
+
+    uint8_t h;
+    uint8_t w;
+
+    uint8_t largeTextSize = 6;
+    uint8_t smallTextSize = 5;
+
+    String header;
+
+    uint8_t headerTextSize = 1;
+    uint8_t headerMargin = 4;
+
+    uint value;
+    uint8_t decimals;
+
+    bool blinkOn;
+
+private:
+    void setTextCursor();
+    Cursor textCursor = Cursor();
+    ulong lastRefresh;
+    uint refreshEvery;
+    bool changed = false;
+
+    uint blinkOnFor;
+    uint blinkOffFor;
+
+    uint blinkFor;
+    ulong firstBlinked;
+    ulong lastBlinked;
+};
+
+#endif // OLED_h
