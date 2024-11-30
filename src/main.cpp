@@ -5,9 +5,11 @@
 #include "ezButton.h"
 #include "internalLED.h"
 #include "OLED.h"
+#include "config.h"
 
-const uint8_t LED_PIN = /*4; */ LED_BUILTIN;
-const uint8_t BUTTON_PIN = D6;
+#ifndef NUM_DIGITS
+#define NUM_DIGITS 3
+#endif
 
 const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
@@ -49,11 +51,6 @@ struct
   uint8_t seconds;
 } settings;
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define NUM_DIGITS 3
-
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 OLED oled = OLED();
 
 void setup()
@@ -185,7 +182,6 @@ void display(ulong value, uint8_t decimals)
     oled.setNumber(value, decimals);
     Serial.println(value);
     displaying = value;
-    // oled.refresh(); // TODO move to loop and leave refresh interval to OLED.h
   }
 }
 
