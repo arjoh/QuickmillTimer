@@ -1,7 +1,6 @@
 #include <EEPROM.h>
-#include <cmath>
-
 #include "Arduino.h"
+#include "ESP8266WiFi.h"
 #include "ezButton.h"
 #include "internalLED.h"
 #include "OLED.h"
@@ -9,6 +8,10 @@
 
 #ifndef NUM_DIGITS
 #define NUM_DIGITS 3
+#endif
+
+#ifndef HOSTNAME
+#define HOSTNAME "quickmilltimer"
 #endif
 
 const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
@@ -29,6 +32,7 @@ uint resetAfter = 3000;
 uint settingAfter = 4000;
 float settingSpeed = 3;
 bool setting = false;
+bool connected = false;
 
 ulong displaying = 0;
 
@@ -39,6 +43,7 @@ void setRunning(bool);
 void checkSetting();
 void checkRunning();
 void checkButton();
+void checkWiFi();
 void handleButtonPressed();
 void handleButtonReleased();
 void readSettings();
@@ -65,6 +70,8 @@ void setup()
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
   readSettings();
+  WiFi.setHostname(HOSTNAME);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   ready();
 }
@@ -90,6 +97,7 @@ void loop()
   checkRunning();
   checkButton();
   checkSetting();
+  checkWiFi();
 }
 
 void checkSetting()
@@ -140,6 +148,24 @@ void checkButton()
   }
 }
 
+void checkWiFi()
+{
+  if (!connected && WiFi.status() == WL_CONNECTED)
+  {
+    Serial.printf("WiFi: connected to %s\n", WIFI_SSID);
+    Serial.print("WiFi: localIP is ");
+    Serial.println(WiFi.localIP());
+    WiFi.setAutoReconnect(true);
+    WiFi.persistent(true);
+    connected = true;
+  }
+  else if (connected && WiFi.status() != WL_CONNECTED)
+  {
+    Serial.printf("WiFi: connection to %s lost", WIFI_SSID);
+    connected = false;
+  }
+}
+
 void handleButtonPressed()
 {
   btnPressedAt = millis();
@@ -180,7 +206,14 @@ void display(ulong value, uint8_t decimals)
   if (value != displaying)
   {
     oled.setNumber(value, decimals);
-    Serial.println(value);
+    if (running)
+    {
+      Serial.printf("%lu/%u\n", value, seconds * 10);
+    }
+    else
+    {
+      Serial.println(value);
+    }
     displaying = value;
   }
 }

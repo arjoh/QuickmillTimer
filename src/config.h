@@ -6,7 +6,8 @@
 #define BUTTON_PIN D6
 #define LED_PIN LED_BUILTIN
 
-// #define NUM_DIGITS 3 // 3 is the default
+// #define HOSTNAME "QuickmillTimer"
+// #define NUM_DIGITS 3
 
 // 7 segment LED display
 // #define LED_DISPLAY
