@@ -108,8 +108,8 @@ void checkSetting()
     btnPressedFor = millis() - btnPressedAt;
     if (!setting && btnPressedFor >= resetAfter)
     {
-      Serial.printf("btnPressedFor: %lu\n", btnPressedFor);
-      Serial.println("reset");
+      Serial.printf("checkSetting: btnPressedFor=%lu\n", btnPressedFor);
+      Serial.println("checkSetting: reset");
       seconds = 0;
       display(seconds, 1);
       oled.setBlinking(true, 1000, 200, 200);
@@ -152,16 +152,15 @@ void checkWiFi()
 {
   if (!connected && WiFi.status() == WL_CONNECTED)
   {
-    Serial.printf("WiFi: connected to %s\n", WIFI_SSID);
-    Serial.print("WiFi: localIP is ");
-    Serial.println(WiFi.localIP());
+    Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
+    Serial.printf("checkWiFi: localIP is %s\n", WiFi.localIP().toString().c_str());
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
     connected = true;
   }
   else if (connected && WiFi.status() != WL_CONNECTED)
   {
-    Serial.printf("WiFi: connection to %s lost", WIFI_SSID);
+    Serial.printf("checkWiFi: connection to %s lost", WIFI_SSID);
     connected = false;
   }
 }
@@ -206,14 +205,7 @@ void display(ulong value, uint8_t decimals)
   if (value != displaying)
   {
     oled.setNumber(value, decimals);
-    if (running)
-    {
-      Serial.printf("%lu/%u\n", value, seconds * 10);
-    }
-    else
-    {
-      Serial.println(value);
-    }
+    Serial.printf("display: %lu\n", value);
     displaying = value;
   }
 }
@@ -228,10 +220,10 @@ void setRunning(bool to)
 
   running = to;
   digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
-  Serial.printf("running: %s\n", running ? "true" : "false");
+  Serial.printf("setRunning: running=%s\n", running ? "true" : "false");
   if (!running)
   {
-    Serial.printf("elasped: %lu\n", runningFor);
+    Serial.printf("setRunning: elasped=%lu\n", runningFor);
   }
   runningSince = running ? millis() : 0;
   runningFor = 0;
