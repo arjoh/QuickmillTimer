@@ -39,7 +39,7 @@ protected:
     uint8_t w;
 
     uint8_t largeTextSize = 6;
-    uint8_t smallTextSize = 5;
+    uint8_t smallTextSize = 4;
 
     String header;
 

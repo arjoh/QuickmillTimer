@@ -187,6 +187,6 @@ void OLED::setTextCursor()
 {
     // 6x8
     // uint16_t size = trunc(log10(value)) + 1;
-    textCursor.x = (w - largeTextSize * 6 * numDigits) / 2;
+    textCursor.x = (w - largeTextSize * 6 * (numDigits - abs(decimals)) - smallTextSize * 6 * abs(decimals)) / 2;
     textCursor.y = header != "" ? (headerTextSize * 8 + headerMargin) : 0;
 }
