@@ -10,6 +10,10 @@
 #define NUM_DIGITS 3
 #endif
 
+#ifndef NUM_DECIMALS
+#define NUM_DECIMALS 1
+#endif
+
 #ifndef HOSTNAME
 #define HOSTNAME "quickmilltimer"
 #endif
@@ -38,7 +42,7 @@ ulong displaying = 0;
 
 // Function definitions
 void ready();
-void display(ulong, uint8_t);
+void display(ulong, int8_t);
 void setRunning(bool);
 void checkSetting();
 void checkRunning();
@@ -88,7 +92,7 @@ void ready()
     oled.refresh();
   }
   // Let's get started!
-  display(seconds * 10, 1);
+  display(seconds * 10, NUM_DECIMALS);
 }
 
 void loop()
@@ -111,14 +115,14 @@ void checkSetting()
       Serial.printf("checkSetting: btnPressedFor=%lu\n", btnPressedFor);
       Serial.println("checkSetting: reset");
       seconds = 0;
-      display(seconds, 1);
+      display(seconds, NUM_DECIMALS);
       oled.setBlinking(true, 1000, 200, 200);
       setting = true;
     }
     else if (setting && btnPressedFor >= settingAfter)
     {
       seconds = settingSpeed * (btnPressedFor - settingAfter) / 1000;
-      display(seconds * 10, 1);
+      display(seconds * 10, NUM_DECIMALS);
     }
   }
 }
@@ -127,7 +131,7 @@ void checkRunning()
   if (running)
   {
     runningFor = millis() - runningSince;
-    display(runningFor / 100, 1);
+    display(runningFor / 100, NUM_DECIMALS);
     if (running && seconds > 0 && runningFor >= seconds * 1000)
     {
       setRunning(false);
@@ -200,7 +204,7 @@ void writeSettings()
   EEPROM.commit();
 }
 
-void display(ulong value, uint8_t decimals)
+void display(ulong value, int8_t decimals)
 {
   if (value != displaying)
   {
@@ -230,6 +234,6 @@ void setRunning(bool to)
 
   if (!running)
   {
-    display(seconds * 10, 1);
+    display(seconds * 10, NUM_DECIMALS);
   }
 }

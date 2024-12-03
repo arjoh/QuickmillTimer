@@ -18,7 +18,7 @@ public:
 
     void setup(uint8_t w, uint8_t h, uint8_t numDigits);
     void setHeader(String header);
-    void setNumber(uint number, uint8_t decimals);
+    void setNumber(uint number, int8_t decimals);
 
     void setBlinking(bool blinking);
     void setBlinking(bool blinking, uint blinkFor);
@@ -29,11 +29,11 @@ public:
     void clearText();
     void off();
 
+    Adafruit_SSD1306 oled;
+
 protected:
     virtual void blink();
     uint8_t numDigits;
-
-    Adafruit_SSD1306 oled;
 
     uint8_t h;
     uint8_t w;
@@ -47,7 +47,7 @@ protected:
     uint8_t headerMargin = 4;
 
     uint value;
-    uint8_t decimals;
+    int8_t decimals;
 
     bool blinkOn;
 

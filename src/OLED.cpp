@@ -50,7 +50,7 @@ void OLED::setHeader(String header)
     setTextCursor();
 }
 
-void OLED::setNumber(uint value, uint8_t decimals)
+void OLED::setNumber(uint value, int8_t decimals)
 {
     this->value = value;
     this->decimals = decimals;
@@ -136,8 +136,8 @@ void OLED::refresh()
         oled.println(header);
     }
 
-    uint8_t size = value < 10 ? 1 + decimals : trunc(log10(value)) + 1;
-    uint large = value / pow(10, decimals);
+    uint8_t size = (value < 10) ? 1 + abs(decimals) : trunc(log10(value)) + 1 + (decimals < 0 ? abs(decimals) : 0);
+    uint large = value / pow(10, decimals < 0 ? 0 : decimals);
     uint small = value - large * pow(10, decimals);
 
     oled.setCursor(textCursor.x, textCursor.y);
@@ -152,6 +152,13 @@ void OLED::refresh()
     {
         oled.setTextSize(smallTextSize);
         oled.print(small);
+    }
+    if (decimals < 0)
+    {
+        for (int i = 0; i > decimals; i--)
+        {
+            oled.print(" ");
+        }
     }
 
     // oled.println();
