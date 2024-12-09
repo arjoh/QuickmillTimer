@@ -74,7 +74,8 @@ void setup()
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
   readSettings();
-  WiFi.setHostname(HOSTNAME);
+  WiFi.mode(WIFI_STA);
+  WiFi.hostname(HOSTNAME);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   ready();
@@ -158,6 +159,7 @@ void checkWiFi()
   {
     Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
     Serial.printf("checkWiFi: localIP is %s\n", WiFi.localIP().toString().c_str());
+    Serial.printf("checkWiFi: connecting took %lums\n", millis());
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
     connected = true;
