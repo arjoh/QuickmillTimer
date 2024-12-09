@@ -10,6 +10,10 @@
 #define NUM_DIGITS 3
 #endif
 
+#ifndef NUM_DECIMALS
+#define NUM_DECIMALS 1
+#endif
+
 #ifndef HOSTNAME
 #define HOSTNAME "quickmilltimer"
 #endif
@@ -38,7 +42,7 @@ ulong displaying = 0;
 
 // Function definitions
 void ready();
-void display(ulong, uint8_t);
+void display(ulong, int8_t);
 void setRunning(bool);
 void checkSetting();
 void checkRunning();
@@ -70,7 +74,8 @@ void setup()
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
   readSettings();
-  WiFi.setHostname(HOSTNAME);
+  WiFi.mode(WIFI_STA);
+  WiFi.hostname(HOSTNAME);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   ready();
@@ -88,7 +93,7 @@ void ready()
     oled.refresh();
   }
   // Let's get started!
-  display(seconds * 10, 1);
+  display(seconds * 10, NUM_DECIMALS);
 }
 
 void loop()
@@ -108,17 +113,17 @@ void checkSetting()
     btnPressedFor = millis() - btnPressedAt;
     if (!setting && btnPressedFor >= resetAfter)
     {
-      Serial.printf("btnPressedFor: %lu\n", btnPressedFor);
-      Serial.println("reset");
+      Serial.printf("checkSetting: btnPressedFor=%lu\n", btnPressedFor);
+      Serial.println("checkSetting: reset");
       seconds = 0;
-      display(seconds, 1);
+      display(seconds, NUM_DECIMALS);
       oled.setBlinking(true, 1000, 200, 200);
       setting = true;
     }
     else if (setting && btnPressedFor >= settingAfter)
     {
       seconds = settingSpeed * (btnPressedFor - settingAfter) / 1000;
-      display(seconds * 10, 1);
+      display(seconds * 10, NUM_DECIMALS);
     }
   }
 }
@@ -127,7 +132,7 @@ void checkRunning()
   if (running)
   {
     runningFor = millis() - runningSince;
-    display(runningFor / 100, 1);
+    display(runningFor / 100, NUM_DECIMALS);
     if (running && seconds > 0 && runningFor >= seconds * 1000)
     {
       setRunning(false);
@@ -152,16 +157,16 @@ void checkWiFi()
 {
   if (!connected && WiFi.status() == WL_CONNECTED)
   {
-    Serial.printf("WiFi: connected to %s\n", WIFI_SSID);
-    Serial.print("WiFi: localIP is ");
-    Serial.println(WiFi.localIP());
+    Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
+    Serial.printf("checkWiFi: localIP is %s\n", WiFi.localIP().toString().c_str());
+    Serial.printf("checkWiFi: connecting took %lums\n", millis());
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
     connected = true;
   }
   else if (connected && WiFi.status() != WL_CONNECTED)
   {
-    Serial.printf("WiFi: connection to %s lost", WIFI_SSID);
+    Serial.printf("checkWiFi: connection to %s lost", WIFI_SSID);
     connected = false;
   }
 }
@@ -201,19 +206,12 @@ void writeSettings()
   EEPROM.commit();
 }
 
-void display(ulong value, uint8_t decimals)
+void display(ulong value, int8_t decimals)
 {
   if (value != displaying)
   {
     oled.setNumber(value, decimals);
-    if (running)
-    {
-      Serial.printf("%lu/%u\n", value, seconds * 10);
-    }
-    else
-    {
-      Serial.println(value);
-    }
+    Serial.printf("display: %lu\n", value);
     displaying = value;
   }
 }
@@ -228,16 +226,16 @@ void setRunning(bool to)
 
   running = to;
   digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
-  Serial.printf("running: %s\n", running ? "true" : "false");
+  Serial.printf("setRunning: running=%s\n", running ? "true" : "false");
   if (!running)
   {
-    Serial.printf("elasped: %lu\n", runningFor);
+    Serial.printf("setRunning: elasped=%lu\n", runningFor);
   }
   runningSince = running ? millis() : 0;
   runningFor = 0;
 
   if (!running)
   {
-    display(seconds * 10, 1);
+    display(seconds * 10, NUM_DECIMALS);
   }
 }

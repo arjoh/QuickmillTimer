@@ -8,6 +8,7 @@
 
 // #define HOSTNAME "QuickmillTimer"
 // #define NUM_DIGITS 3
+// #define NUM_DECIMALS 1
 
 // 7 segment LED display
 // #define LED_DISPLAY
