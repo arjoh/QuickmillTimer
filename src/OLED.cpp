@@ -1,12 +1,12 @@
 #include "OLED.h"
 
 const uint8_t wiFiIconBitmap[] PROGMEM = {
-    0x3C, // .####.
-    0x42, // #....#
-    0x18, // ..##..
-    0x24, // .#..#.
-    0x00, // ......
-    0x18, // ..##..
+    0x3C, // ..####..
+    0x42, // .#....#.
+    0x18, // ...##...
+    0x24, // ..#..#..
+    0x00, // ........
+    0x18, // ...##...
 };
 
 OLED::OLED()
@@ -158,9 +158,9 @@ void OLED::refresh()
         oled.drawBitmap(w - 1 - 8, 0, wiFiIconBitmap, 8, 8, WHITE, BLACK);
         break;
     case WiFiIcon::Disconnected:
-        oled.setCursor(w - 1 - 8, 0);
+        oled.setCursor(w - 1 - 7, 0);
         oled.setTextSize(headerTextSize);
-        oled.print("X");
+        oled.print("x");
         break;
     default:
         break;

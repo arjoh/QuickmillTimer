@@ -74,8 +74,11 @@ void setup()
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
   readSettings();
+
   WiFi.mode(WIFI_STA);
   WiFi.hostname(HOSTNAME);
+  WiFi.persistent(true);
+  WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   ready();
@@ -158,18 +161,28 @@ void checkWiFi()
 {
   if (!connected && WiFi.status() == WL_CONNECTED)
   {
-    Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
-    Serial.printf("checkWiFi: localIP is %s\n", WiFi.localIP().toString().c_str());
-    Serial.printf("checkWiFi: connecting took %lums\n", millis());
-    WiFi.setAutoReconnect(true);
-    WiFi.persistent(true);
-    connected = true;
-    oled.setWiFiIcon(WiFiIcon::Connected);
 
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo."); });
-    ElegantOTA.begin(&server);
-    server.begin();
+    IPAddress ip = WiFi.localIP();
+    if (ip[0] == 169 && ip[1] == 254)
+    {
+      Serial.printf("checkWiFi: APIPA address (%s), disconnecting.\n", ip.toString().c_str());
+      WiFi.disconnect(false); // Disconnect but keep credentials
+      WiFi.begin();
+    }
+    else
+    {
+      Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
+      Serial.printf("checkWiFi: localIP is %s\n", ip.toString().c_str());
+      Serial.printf("checkWiFi: connecting took %lums\n", millis());
+
+      connected = true;
+      oled.setWiFiIcon(WiFiIcon::Connected);
+
+      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+                { request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo."); });
+      ElegantOTA.begin(&server);
+      server.begin();
+    }
   }
   else if (connected && WiFi.status() != WL_CONNECTED)
   {
