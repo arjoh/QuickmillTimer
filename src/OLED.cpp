@@ -1,11 +1,21 @@
 #include "OLED.h"
 
+const uint8_t wiFiIconBitmap[] PROGMEM = {
+    0x3C, // .####.
+    0x42, // #....#
+    0x18, // ..##..
+    0x24, // .#..#.
+    0x00, // ......
+    0x18, // ..##..
+};
+
 OLED::OLED()
 {
     w = 128;
     h = 64;
     textCursor.x = 0;
     textCursor.y = 0;
+    wiFiIcon = WiFiIcon::NA;
 }
 void OLED::setup(uint8_t w, uint8_t h, uint8_t numDigits)
 {
@@ -57,6 +67,12 @@ void OLED::setNumber(uint value, int8_t decimals)
     this->changed = true;
 
     setTextCursor();
+}
+
+void OLED::setWiFiIcon(WiFiIcon icon)
+{
+    this->wiFiIcon = icon;
+    this->changed = true;
 }
 
 void OLED::setBlinking(bool blinking)
@@ -136,6 +152,20 @@ void OLED::refresh()
         oled.println(header);
     }
 
+    switch (wiFiIcon)
+    {
+    case WiFiIcon::Connected:
+        oled.drawBitmap(w - 1 - 8, 0, wiFiIconBitmap, 8, 8, WHITE, BLACK);
+        break;
+    case WiFiIcon::Disconnected:
+        oled.setCursor(w - 1 - 8, 0);
+        oled.setTextSize(headerTextSize);
+        oled.print("X");
+        break;
+    default:
+        break;
+    }
+
     uint8_t size = (value < 10) ? 1 + abs(decimals) : trunc(log10(value)) + 1 + (decimals < 0 ? abs(decimals) : 0);
     uint large = value / pow(10, decimals < 0 ? 0 : decimals);
     uint small = value - large * pow(10, decimals);
@@ -187,6 +217,6 @@ void OLED::setTextCursor()
 {
     // 6x8
     // uint16_t size = trunc(log10(value)) + 1;
-    textCursor.x = (w - largeTextSize * 6 * (numDigits - abs(decimals)) - smallTextSize * 6 * abs(decimals)) / 2;
-    textCursor.y = header != "" ? (headerTextSize * 8 + headerMargin) : 0;
+    textCursor.x = (w - largeTextSize * 6 * (numDigits - abs(decimals)) - smallTextSize * 6 * abs(decimals)) / 2 - 1;
+    textCursor.y = header != "" ? (headerTextSize * 8 + headerMargin) - 1 : 0;
 }

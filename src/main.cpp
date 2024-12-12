@@ -1,6 +1,6 @@
+#include "OTA.h"
 #include <EEPROM.h>
 #include "Arduino.h"
-#include "ESP8266WiFi.h"
 #include "ezButton.h"
 #include "internalLED.h"
 #include "OLED.h"
@@ -86,14 +86,15 @@ void ready()
   // Just for fun..
   display(666, 0);
   oled.setHeader("QuickmillTimer");
-  oled.refresh();
   oled.setBlinking(true, 2664, 666, 333);
   while (oled.isBlinking)
   {
     oled.refresh();
   }
   // Let's get started!
+  oled.setWiFiIcon(WiFiIcon::Disconnected);
   display(seconds * 10, NUM_DECIMALS);
+  oled.refresh();
 }
 
 void loop()
@@ -163,11 +164,23 @@ void checkWiFi()
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
     connected = true;
+    oled.setWiFiIcon(WiFiIcon::Connected);
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo."); });
+    ElegantOTA.begin(&server);
+    server.begin();
   }
   else if (connected && WiFi.status() != WL_CONNECTED)
   {
+    oled.setWiFiIcon(WiFiIcon::Disconnected);
     Serial.printf("checkWiFi: connection to %s lost", WIFI_SSID);
     connected = false;
+  }
+
+  if (connected)
+  {
+    ElegantOTA.loop();
   }
 }
 
@@ -197,11 +210,13 @@ void readSettings()
   EEPROM.begin(settingsSize);
   EEPROM.get(settingsAddress, settings);
   seconds = settings.seconds;
+  Serial.printf("readSettings: settings.seconds=%u\n", settings.seconds);
 }
 
 void writeSettings()
 {
   settings.seconds = seconds;
+  Serial.printf("writeSettings: settings.seconds=%u\n", seconds);
   EEPROM.put(settingsAddress, settings);
   EEPROM.commit();
 }
