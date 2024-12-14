@@ -74,11 +74,17 @@ void setup()
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
+  Serial.printf("setup: LED_PIN=%d\n", LED_PIN);
+#else
+  Serial.println("setup: LED_PIN not set.");
 #endif
 #ifdef RELAY_PIN
   pinMode(RELAY_PIN, OUTPUT);
+  Serial.printf("setup: RELAY_PIN=%d\n", RELAY_PIN);  
+#else
+  Serial.println("setup: RELAY_PIN not set.");
 #endif
-  button.setDebounceTime(100); // set debounce time to 50 milliseconds
+  button.setDebounceTime(100);
 
   readSettings();
 
@@ -192,11 +198,13 @@ void checkWiFi()
 
 #if defined(OTA_USERNAME) && defined(OTA_PASSWORD)
       ElegantOTA.begin(&server, OTA_USERNAME, OTA_PASSWORD);
+      Serial.println("checkWiFi: Starting ElegantOTA with username & password.");
 #else
 #if defined(OTA_USERNAME) || defined(OTA_PASSWORD)
 #error "Both OTA_USERNAME _and_ OTA_PASSWORD must be defined."
 #endif
       ElegantOTA.begin(&server);
+      Serial.println("checkWiFi: Starting ElegantOTA");
 #endif
       server.begin();
     }
