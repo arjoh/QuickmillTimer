@@ -5,6 +5,7 @@
 // General settings
 #define BUTTON_PIN D6
 #define LED_PIN LED_BUILTIN
+// #define RELAY_PIN LED_BUILTIN
 
 // #define HOSTNAME "QuickmillTimer"
 // #define NUM_DIGITS 3

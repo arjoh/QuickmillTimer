@@ -18,8 +18,10 @@
 #define HOSTNAME "quickmilltimer"
 #endif
 
+#ifdef LED_PIN
 const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
+#endif
 
 ezButton button(BUTTON_PIN);
 
@@ -69,8 +71,13 @@ void setup()
 
   oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT, NUM_DIGITS);
 
+#ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
+#endif
+#ifdef RELAY_PIN
+  pinMode(RELAY_PIN, OUTPUT);
+#endif
   button.setDebounceTime(100); // set debounce time to 50 milliseconds
 
   readSettings();
@@ -86,14 +93,16 @@ void setup()
 
 void ready()
 {
+  oled.setHeader("QuickmillTimer");
+
   // Just for fun..
   display(666, 0);
-  oled.setHeader("QuickmillTimer");
   oled.setBlinking(true, 2664, 666, 333);
   while (oled.isBlinking)
   {
     oled.refresh();
   }
+
   // Let's get started!
   oled.setWiFiIcon(WiFiIcon::Disconnected);
   display(seconds * 10, NUM_DECIMALS);
@@ -179,8 +188,16 @@ void checkWiFi()
       oled.setWiFiIcon(WiFiIcon::Connected);
 
       server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-                { request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo."); });
+                { request->send(200, "application/json", "\"QuickmillTimer by ariejoost\""); });
+
+#if defined(OTA_USERNAME) && defined(OTA_PASSWORD)
+      ElegantOTA.begin(&server, OTA_USERNAME, OTA_PASSWORD);
+#else
+#if defined(OTA_USERNAME) || defined(OTA_PASSWORD)
+#error "Both OTA_USERNAME _and_ OTA_PASSWORD must be defined."
+#endif
       ElegantOTA.begin(&server);
+#endif
       server.begin();
     }
   }
@@ -253,7 +270,12 @@ void setRunning(bool to)
   }
 
   running = to;
+#ifdef LED_PIN
   digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
+#endif
+#ifdef RELAY_PIN
+  digitalWrite(RELAY_PIN, running);
+#endif
   Serial.printf("setRunning: running=%s\n", running ? "true" : "false");
   if (!running)
   {
