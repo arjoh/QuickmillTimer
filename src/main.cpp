@@ -1,6 +1,6 @@
+#include "OTA.h"
 #include <EEPROM.h>
 #include "Arduino.h"
-#include "ESP8266WiFi.h"
 #include "ezButton.h"
 #include "internalLED.h"
 #include "OLED.h"
@@ -18,8 +18,10 @@
 #define HOSTNAME "quickmilltimer"
 #endif
 
+#ifdef LED_PIN
 const int LED_ON = LED_PIN == LED_BUILTIN ? INTERNAL_LED_ON : HIGH;
 const int LED_OFF = LED_PIN == LED_BUILTIN ? INTERNAL_LED_OFF : LOW;
+#endif
 
 ezButton button(BUTTON_PIN);
 
@@ -69,13 +71,27 @@ void setup()
 
   oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT, NUM_DIGITS);
 
+#ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LED_OFF);
-  button.setDebounceTime(100); // set debounce time to 50 milliseconds
+  Serial.printf("setup: LED_PIN=%d\n", LED_PIN);
+#else
+  Serial.println("setup: LED_PIN not set.");
+#endif
+#ifdef RELAY_PIN
+  pinMode(RELAY_PIN, OUTPUT);
+  Serial.printf("setup: RELAY_PIN=%d\n", RELAY_PIN);  
+#else
+  Serial.println("setup: RELAY_PIN not set.");
+#endif
+  button.setDebounceTime(100);
 
   readSettings();
+
   WiFi.mode(WIFI_STA);
   WiFi.hostname(HOSTNAME);
+  WiFi.persistent(true);
+  WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   ready();
@@ -83,17 +99,20 @@ void setup()
 
 void ready()
 {
+  oled.setHeader("QuickmillTimer");
+
   // Just for fun..
   display(666, 0);
-  oled.setHeader("QuickmillTimer");
-  oled.refresh();
   oled.setBlinking(true, 2664, 666, 333);
   while (oled.isBlinking)
   {
     oled.refresh();
   }
+
   // Let's get started!
+  oled.setWiFiIcon(WiFiIcon::Disconnected);
   display(seconds * 10, NUM_DECIMALS);
+  oled.refresh();
 }
 
 void loop()
@@ -157,17 +176,49 @@ void checkWiFi()
 {
   if (!connected && WiFi.status() == WL_CONNECTED)
   {
-    Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
-    Serial.printf("checkWiFi: localIP is %s\n", WiFi.localIP().toString().c_str());
-    Serial.printf("checkWiFi: connecting took %lums\n", millis());
-    WiFi.setAutoReconnect(true);
-    WiFi.persistent(true);
-    connected = true;
+
+    IPAddress ip = WiFi.localIP();
+    if (ip[0] == 169 && ip[1] == 254)
+    {
+      Serial.printf("checkWiFi: APIPA address (%s), disconnecting.\n", ip.toString().c_str());
+      WiFi.disconnect(false); // Disconnect but keep credentials
+      WiFi.begin();
+    }
+    else
+    {
+      Serial.printf("checkWiFi: connected to %s\n", WIFI_SSID);
+      Serial.printf("checkWiFi: localIP is %s\n", ip.toString().c_str());
+      Serial.printf("checkWiFi: connecting took %lums\n", millis());
+
+      connected = true;
+      oled.setWiFiIcon(WiFiIcon::Connected);
+
+      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+                { request->send(200, "application/json", "\"QuickmillTimer by ariejoost\""); });
+
+#if defined(OTA_USERNAME) && defined(OTA_PASSWORD)
+      ElegantOTA.begin(&server, OTA_USERNAME, OTA_PASSWORD);
+      Serial.println("checkWiFi: Starting ElegantOTA with username & password.");
+#else
+#if defined(OTA_USERNAME) || defined(OTA_PASSWORD)
+#error "Both OTA_USERNAME _and_ OTA_PASSWORD must be defined."
+#endif
+      ElegantOTA.begin(&server);
+      Serial.println("checkWiFi: Starting ElegantOTA");
+#endif
+      server.begin();
+    }
   }
   else if (connected && WiFi.status() != WL_CONNECTED)
   {
+    oled.setWiFiIcon(WiFiIcon::Disconnected);
     Serial.printf("checkWiFi: connection to %s lost", WIFI_SSID);
     connected = false;
+  }
+
+  if (connected)
+  {
+    ElegantOTA.loop();
   }
 }
 
@@ -197,11 +248,13 @@ void readSettings()
   EEPROM.begin(settingsSize);
   EEPROM.get(settingsAddress, settings);
   seconds = settings.seconds;
+  Serial.printf("readSettings: settings.seconds=%u\n", settings.seconds);
 }
 
 void writeSettings()
 {
   settings.seconds = seconds;
+  Serial.printf("writeSettings: settings.seconds=%u\n", seconds);
   EEPROM.put(settingsAddress, settings);
   EEPROM.commit();
 }
@@ -225,7 +278,12 @@ void setRunning(bool to)
   }
 
   running = to;
+#ifdef LED_PIN
   digitalWrite(LED_PIN, running ? LED_ON : LED_OFF);
+#endif
+#ifdef RELAY_PIN
+  digitalWrite(RELAY_PIN, running);
+#endif
   Serial.printf("setRunning: running=%s\n", running ? "true" : "false");
   if (!running)
   {

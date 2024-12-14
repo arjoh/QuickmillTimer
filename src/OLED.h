@@ -11,6 +11,13 @@ typedef struct
     int16_t y;
 } Cursor;
 
+enum class WiFiIcon
+{
+    Connected,
+    Disconnected,
+    NA
+};
+
 class OLED
 {
 public:
@@ -20,6 +27,7 @@ public:
     void setHeader(String header);
     void setNumber(uint number, int8_t decimals);
 
+    void setWiFiIcon(WiFiIcon icon);
     void setBlinking(bool blinking);
     void setBlinking(bool blinking, uint blinkFor);
     void setBlinking(bool blinking, uint blinkFor, uint blinkOnFor, uint blinkOffFor);
@@ -64,6 +72,8 @@ private:
     uint blinkFor;
     ulong firstBlinked;
     ulong lastBlinked;
+
+    WiFiIcon wiFiIcon;
 };
 
 #endif // OLED_h
