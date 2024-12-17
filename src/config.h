@@ -3,17 +3,19 @@
 #include "secrets.h"
 
 // General settings
-#define BUTTON_PIN D6
-#define LED_PIN LED_BUILTIN
-// #define RELAY_PIN LED_BUILTIN
+#define BUTTON_PIN 10
 
+#if defined(ESP8266)
+#define LED_PIN LED_BUILTIN
+#elif defined(ESP32)
+#define LED_PIN 23
+#define RELAY_PIN 16
+#endif
+
+// #define RELAY_PIN LED_BUILTIN
 // #define HOSTNAME "QuickmillTimer"
 // #define NUM_DIGITS 3
 // #define NUM_DECIMALS 1
-
-// 7 segment LED display
-// #define LED_DISPLAY
-// TODO
 
 // OLED display
 #define OLED_DISPLAY
