@@ -1,10 +1,10 @@
 #ifndef BOARD_h
 #define BOARD_h
-#ifdef BOARD_NODEMCUV2
+#ifdef ESP8266
   #define INTERNAL_LED_ON  LOW
   #define INTERNAL_LED_OFF HIGH
 #endif
-#ifdef BOARD_ESP32_RELAY_AC_X2
+#ifdef ESP32
 #ifdef LED_BUILTIN
 #undef LED_BUILTIN
 #endif
