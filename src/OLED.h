@@ -52,7 +52,7 @@ protected:
     String header;
 
     uint8_t headerTextSize = 1;
-    uint8_t headerMargin = 4;
+    uint8_t headerMargin = 9;
 
     uint value;
     int8_t decimals;
