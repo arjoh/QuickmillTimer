@@ -3,10 +3,9 @@
 #include "secrets.h"
 
 // General settings
-#define BUTTON_PIN 10
-
 #if defined(ESP8266)
 #define LED_PIN LED_BUILTIN
+#define BUTTON_PIN D6
 #elif defined(ESP32)
 #define LED_PIN 23
 #define RELAY_PIN 16
