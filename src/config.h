@@ -9,6 +9,7 @@
 #elif defined(ESP32)
 #define LED_PIN 23
 #define RELAY_PIN 16
+#define BUTTON_PIN 12
 #endif
 
 // #define RELAY_PIN LED_BUILTIN
