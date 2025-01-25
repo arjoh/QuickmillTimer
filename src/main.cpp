@@ -1,8 +1,8 @@
+#include "Arduino.h"
 #include "OTA.h"
 #include <EEPROM.h>
-#include "Arduino.h"
 #include "ezButton.h"
-#include "internalLED.h"
+#include "boards.h"
 #include "OLED.h"
 #include "config.h"
 
@@ -67,7 +67,7 @@ OLED oled = OLED();
 void setup()
 {
   Serial.begin(115200);
-  Serial.println();
+  Serial.println("Begin");
 
   oled.setup(SCREEN_WIDTH, SCREEN_HEIGHT, NUM_DIGITS);
 

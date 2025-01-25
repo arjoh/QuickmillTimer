@@ -155,7 +155,7 @@ void OLED::refresh()
     switch (wiFiIcon)
     {
     case WiFiIcon::Connected:
-        oled.drawBitmap(w - 1 - 8, 0, wiFiIconBitmap, 8, 8, WHITE, BLACK);
+        oled.drawBitmap(w - 1 - 8, 0, wiFiIconBitmap, 8, 6, WHITE, BLACK);
         break;
     case WiFiIcon::Disconnected:
         oled.setCursor(w - 1 - 7, 0);
